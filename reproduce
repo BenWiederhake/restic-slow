@@ -5,15 +5,15 @@ set -e
 # == CONFIGURATION ==
 
 RESTIC=/usr/bin/restic
-TEST_FROM="/tmp/restic-slow-fromdir"
-TEST_DEST="/tmp/restic-slow-destdir"
+export RESTIC_REPOSITORY="sftp://backup-xpected@heimdal/writable/bench2"
+TEST_FROM="fromdir"
 LOGFILE="timing_$(date "+%Y%m%d_%H%M%S").log"
 
 echo "Using command '${RESTIC}'."
 
 # == CLEANUP ==
 
-rm -rf "${TEST_FROM}" "${TEST_DEST}"
+rm -rf "${TEST_FROM}"
 
 # == SETUP: fromdir ==
 
@@ -42,8 +42,6 @@ done
 
 # == SETUP: destdir ==
 
-mkdir "${TEST_DEST}"
-export RESTIC_REPOSITORY="${TEST_DEST}"
 export RESTIC_PASSWORD="1234"
 ${RESTIC} init
 
@@ -51,11 +49,12 @@ ${RESTIC} init
 
 ${RESTIC} version | tee "${LOGFILE}"
 
-ITERATIONS=300
+ITERATIONS=500
 for i in $(seq ${ITERATIONS})
 do
     echo "Iteration $i / ${ITERATIONS}"
-    date
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} snapshots --json > "${TEST_FROM}/snapshots.txt"
     ${RESTIC} backup "${TEST_FROM}" > /dev/null
     /usr/bin/time restic check
 done 2>&1 | tee -a "${LOGFILE}"
