@@ -52,7 +52,7 @@ ${RESTIC} version | tee "${LOGFILE}"
 for i in $(seq 1000)
 do
     date
-    ${RESTIC} backup . > /dev/null
+    ${RESTIC} backup fromdir > /dev/null
     /usr/bin/time restic check
 done 2>&1 | tee -a "${LOGFILE}"
 
