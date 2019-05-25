@@ -1,0 +1,59 @@
+#!/bin/sh
+
+set -e
+
+# == CONFIGURATION ==
+
+RESTIC=/usr/bin/restic
+echo "Using command '${RESTIC}'."
+
+# == CLEANUP ==
+
+rm -rf fromdir destdir
+
+# == SETUP: fromdir ==
+
+mkdir fromdir
+for i in $(seq 20)
+do
+    DSTFILE="$(mktemp fromdir/important_file_XXXXXXX.txt)"
+    shuf -n3 <<EOF > "${DSTFILE}"
+Hello, World!
+foobar
+Not something very interesting.
+Hello!
+Yes, hello?
+Who is there?
+Surely, you can't be serious!
+I am serious.
+And stop calling me Shirly!
+This is a self-descriptive line.
+Lorem ipsum
+Dolor sit something something.
+The quick brown fox.
+Jumped over by the lazy dogs.
+This sentence is an anagram for itself.
+EOF
+done
+
+# == SETUP: destdir ==
+
+mkdir destdir
+export RESTIC_REPOSITORY="$(realpath destdir)"
+export RESTIC_PASSWORD="1234"
+${RESTIC} init
+
+# == EXECUTE ==
+
+LOGFILE="timing_$(date "+%Y%m%d_%H%M%S").log"
+
+${RESTIC} version | tee "${LOGFILE}"
+
+for i in $(seq 1000)
+do
+    date
+    ${RESTIC} backup . > /dev/null
+    /usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+
+echo "Results have been copied to: ${LOGFILE}"
