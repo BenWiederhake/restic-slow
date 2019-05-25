@@ -5,18 +5,22 @@ set -e
 # == CONFIGURATION ==
 
 RESTIC=/usr/bin/restic
+TEST_FROM="/tmp/restic-slow-fromdir"
+TEST_DEST="/tmp/restic-slow-destdir"
+LOGFILE="timing_$(date "+%Y%m%d_%H%M%S").log"
+
 echo "Using command '${RESTIC}'."
 
 # == CLEANUP ==
 
-rm -rf fromdir destdir
+rm -rf "${TEST_FROM}" "${TEST_DEST}"
 
 # == SETUP: fromdir ==
 
-mkdir fromdir
+mkdir "${TEST_FROM}"
 for i in $(seq 20)
 do
-    DSTFILE="$(mktemp fromdir/important_file_XXXXXXX.txt)"
+    DSTFILE="$(mktemp "${TEST_FROM}"/important_file_XXXXXXX.txt)"
     shuf -n3 <<EOF > "${DSTFILE}"
 Hello, World!
 foobar
@@ -38,21 +42,21 @@ done
 
 # == SETUP: destdir ==
 
-mkdir destdir
-export RESTIC_REPOSITORY="$(realpath destdir)"
+mkdir "${TEST_DEST}"
+export RESTIC_REPOSITORY="${TEST_DEST}"
 export RESTIC_PASSWORD="1234"
 ${RESTIC} init
 
 # == EXECUTE ==
 
-LOGFILE="timing_$(date "+%Y%m%d_%H%M%S").log"
-
 ${RESTIC} version | tee "${LOGFILE}"
 
-for i in $(seq 1000)
+ITERATIONS=300
+for i in $(seq ${ITERATIONS})
 do
+    echo "Iteration $i / ${ITERATIONS}"
     date
-    ${RESTIC} backup fromdir > /dev/null
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
     /usr/bin/time restic check
 done 2>&1 | tee -a "${LOGFILE}"
 
