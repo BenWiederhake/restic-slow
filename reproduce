@@ -6,7 +6,7 @@ set -e
 
 RESTIC=/usr/bin/restic
 export RESTIC_REPOSITORY="sftp://backup-xpected@heimdal/writable/bench2"
-TEST_FROM="fromdir"
+TEST_FROM="/tmp/fromdir"
 LOGFILE="timing_$(date "+%Y%m%d_%H%M%S").log"
 
 echo "Using command '${RESTIC}'."
@@ -38,6 +38,8 @@ The quick brown fox.
 Jumped over by the lazy dogs.
 This sentence is an anagram for itself.
 EOF
+    DSTFILE="$(mktemp "${TEST_FROM}"/important_data_XXXXXXX.dat)"
+    dd if=/dev/urandom of="${DSTFILE}" bs=1M count=10 > /dev/null
 done
 
 # == SETUP: destdir ==
