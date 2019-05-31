@@ -5,7 +5,8 @@ set -e
 # == CONFIGURATION ==
 
 RESTIC=/usr/bin/restic
-export RESTIC_REPOSITORY="sftp://backup-xpected@heimdal/writable/bench2"
+#export RESTIC_REPOSITORY="sftp://backup-xpected@heimdal/writable/bench2"
+export RESTIC_REPOSITORY="/tmp/restic-bench5"
 TEST_FROM="/tmp/fromdir"
 LOGFILE="timing_$(date "+%Y%m%d_%H%M%S").log"
 
@@ -18,7 +19,7 @@ rm -rf "${TEST_FROM}"
 # == SETUP: fromdir ==
 
 mkdir "${TEST_FROM}"
-for i in $(seq 20)
+for i in $(seq 10)
 do
     DSTFILE="$(mktemp "${TEST_FROM}"/important_file_XXXXXXX.txt)"
     shuf -n3 <<EOF > "${DSTFILE}"
@@ -39,7 +40,7 @@ Jumped over by the lazy dogs.
 This sentence is an anagram for itself.
 EOF
     DSTFILE="$(mktemp "${TEST_FROM}"/important_data_XXXXXXX.dat)"
-    dd if=/dev/urandom of="${DSTFILE}" bs=1M count=10 > /dev/null
+    dd if=/dev/urandom of="${DSTFILE}" bs=8M count=1 2> /dev/null
 done
 
 # == SETUP: destdir ==
@@ -51,7 +52,7 @@ ${RESTIC} init
 
 ${RESTIC} version | tee "${LOGFILE}"
 
-ITERATIONS=500
+ITERATIONS=1000
 for i in $(seq ${ITERATIONS})
 do
     echo "Iteration $i / ${ITERATIONS}"

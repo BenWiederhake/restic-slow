@@ -1,0 +1,13 @@
+#!/bin/sh
+
+FROMFILE="$1"
+
+if [ -z "${FROMFILE}" ]
+then
+    echo "Need to provide a file." >&2
+    echo "USAGE: $0 FROMFILE" >&2
+    exit 1
+fi
+
+grep maxresident "${FROMFILE}" | sed -re 's-^(.+)user (.+)system 0:(.*)elapsed .+%CPU \(.+avgtext\+.+avgdata (.+)maxresident\)k$-\1\t\2\t\3\t\4-' | xclip -selection clipboard -i
+echo "Copied data from file '${FROMFILE}' to clipboard."
