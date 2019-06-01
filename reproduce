@@ -31,7 +31,7 @@ rm -rf "${CONTAINER}"
 # == SETUP: fromdir ==
 
 mkdir -p "${TEST_FROM}"
-for i in $(seq 10)
+for i in $(seq 3)
 do
     DSTFILE="$(mktemp "${TEST_FROM}"/important_file_XXXXXXX.txt)"
     shuf -n3 <<EOF > "${DSTFILE}"
@@ -51,8 +51,6 @@ The quick brown fox.
 Jumped over by the lazy dogs.
 This sentence is an anagram for itself.
 EOF
-    DSTFILE="$(mktemp "${TEST_FROM}"/important_data_XXXXXXX.dat)"
-    dd if=/dev/urandom of="${DSTFILE}" bs=8M count=1 2> /dev/null
 done
 
 # == SETUP: destdir ==
@@ -64,45 +62,66 @@ ${RESTIC} init
 
 echo "Iteration 1 / 2000"
 date | tee "${TEST_FROM}/date.txt"
-#${RESTIC} snapshots --json > "${TEST_FROM}/snapshots.txt"
 ${RESTIC} backup "${TEST_FROM}" > /dev/null
 #/usr/bin/time restic check
 cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}a"
-echo "Mirror of SMALL (r=1) at: ${CONTAINER}a"
+echo "Mirror at time r=1 at path: ${CONTAINER}a"
 
 # == EXECUTE: b ==
 
-for i in $(seq 2 1000)
+for i in $(seq 2 500)
 do
     echo "Iteration $i / 2000"
     date | tee "${TEST_FROM}/date.txt"
-    #${RESTIC} snapshots --json > "${TEST_FROM}/snapshots.txt"
     ${RESTIC} backup "${TEST_FROM}" > /dev/null
     #/usr/bin/time restic check
 done 2>&1 | tee -a "${LOGFILE}"
 cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}b"
-echo "Mirror of LARGE (r=1000) at: ${CONTAINER}b"
+echo "Mirror at time r=500 at path: ${CONTAINER}b"
 
 # == EXECUTE: c ==
 
-for i in $(seq 1001 2000)
+for i in $(seq 501 1000)
 do
     echo "Iteration $i / 2000"
     date | tee "${TEST_FROM}/date.txt"
-    #${RESTIC} snapshots --json > "${TEST_FROM}/snapshots.txt"
     ${RESTIC} backup "${TEST_FROM}" > /dev/null
     #/usr/bin/time restic check
 done 2>&1 | tee -a "${LOGFILE}"
 cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}c"
+echo "Mirror at time r=1000 at path: ${CONTAINER}c"
+
+# == EXECUTE: d ==
+
+for i in $(seq 1001 1500)
+do
+    echo "Iteration $i / 2000"
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}d"
+echo "Mirror at time r=1500 at path: ${CONTAINER}d"
+
+# == EXECUTE: e ==
+
+for i in $(seq 1501 2000)
+do
+    echo "Iteration $i / 2000"
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}e"
+echo "Mirror at time r=2000 at path: ${CONTAINER}e"
 echo "Repository generation complete."
-echo "Mirror of VERYLARGE (r=2000) at: ${CONTAINER}c"
 
 # == MAKETAR ==
 
 REPOFILES="$(mktemp "${CONTAINER}"filelist_XXXXXXX.lst)"
 
 cd "$CONTAINER"
-find a b c -empty -o -type f | sort -k1.3 > "${REPOFILES}"
+find a b c d e -empty -o -type f | sort -k1.3 > "${REPOFILES}"
 echo "Saving $(wc -l "${REPOFILES}") files as compressed tar."
 echo "This may take a while ..."
 tar caf repos.tar.xz --files-from "${REPOFILES}"
