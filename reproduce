@@ -2,23 +2,35 @@
 
 set -e
 
+
 # == CONFIGURATION ==
 
 RESTIC=/usr/bin/restic
-#export RESTIC_REPOSITORY="sftp://backup-xpected@heimdal/writable/bench2"
-export RESTIC_REPOSITORY="/tmp/restic-bench5"
-TEST_FROM="/tmp/fromdir"
+CONTAINER="/tmp/restic-benching/"
+export RESTIC_REPOSITORY="${CONTAINER}repo"
+export RESTIC_PASSWORD="1234"
+TEST_FROM="${CONTAINER}fromdir"
 LOGFILE="timing_$(date "+%Y%m%d_%H%M%S").log"
 
-echo "Using command '${RESTIC}'."
+echo "This will create several repos such that the"
+echo "quadratic slowdown can be easily analyzed *afterwards*."
+echo ""
+echo "Using command '${RESTIC}':"
+${RESTIC} version | tee "${LOGFILE}"
+echo "Main repo will be in '${RESTIC_REPOSITORY}'."
+echo "Password is '${RESTIC_PASSWORD}'."
+echo ""
+
+# Fail early is programs are missing
+type rm mkdir shuf dd date tee cp tar > /dev/null
 
 # == CLEANUP ==
 
-rm -rf "${TEST_FROM}"
+rm -rf "${CONTAINER}"
 
 # == SETUP: fromdir ==
 
-mkdir "${TEST_FROM}"
+mkdir -p "${TEST_FROM}"
 for i in $(seq 10)
 do
     DSTFILE="$(mktemp "${TEST_FROM}"/important_file_XXXXXXX.txt)"
@@ -48,18 +60,55 @@ done
 export RESTIC_PASSWORD="1234"
 ${RESTIC} init
 
-# == EXECUTE ==
+# == EXECUTE: a ==
 
-${RESTIC} version | tee "${LOGFILE}"
+echo "Iteration 1 / 2000"
+date | tee "${TEST_FROM}/date.txt"
+#${RESTIC} snapshots --json > "${TEST_FROM}/snapshots.txt"
+${RESTIC} backup "${TEST_FROM}" > /dev/null
+#/usr/bin/time restic check
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}a"
+echo "Mirror of SMALL (r=1) at: ${CONTAINER}a"
 
-ITERATIONS=1000
-for i in $(seq ${ITERATIONS})
+# == EXECUTE: b ==
+
+for i in $(seq 2 1000)
 do
-    echo "Iteration $i / ${ITERATIONS}"
+    echo "Iteration $i / 2000"
     date | tee "${TEST_FROM}/date.txt"
-    ${RESTIC} snapshots --json > "${TEST_FROM}/snapshots.txt"
+    #${RESTIC} snapshots --json > "${TEST_FROM}/snapshots.txt"
     ${RESTIC} backup "${TEST_FROM}" > /dev/null
-    /usr/bin/time restic check
+    #/usr/bin/time restic check
 done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}b"
+echo "Mirror of LARGE (r=1000) at: ${CONTAINER}b"
 
-echo "Results have been copied to: ${LOGFILE}"
+# == EXECUTE: c ==
+
+for i in $(seq 1001 2000)
+do
+    echo "Iteration $i / 2000"
+    date | tee "${TEST_FROM}/date.txt"
+    #${RESTIC} snapshots --json > "${TEST_FROM}/snapshots.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}c"
+echo "Repository generation complete."
+echo "Mirror of VERYLARGE (r=2000) at: ${CONTAINER}c"
+
+# == MAKETAR ==
+
+REPOFILES="$(mktemp "${CONTAINER}"filelist_XXXXXXX.lst)"
+
+cd "$CONTAINER"
+find a b c -empty -o -type f | sort -k1.3 > "${REPOFILES}"
+echo "Saving $(wc -l "${REPOFILES}") files as compressed tar."
+echo "This may take a while ..."
+tar caf repos.tar.xz --files-from "${REPOFILES}"
+rm "${REPOFILES}"
+
+echo ""
+echo "Repos are available at: ${CONTAINER}"
+echo "Backup available at: $(realpath repos.tar.xz)"
+echo "Timing results copied from stdout to: ${LOGFILE}"
