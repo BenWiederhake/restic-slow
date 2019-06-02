@@ -6,7 +6,7 @@ set -e
 # == CONFIGURATION ==
 
 RESTIC=/usr/bin/restic
-CONTAINER="/tmp/restic-benching/"
+CONTAINER="/tmp/restic-megabenching/"
 export RESTIC_REPOSITORY="${CONTAINER}repo"
 export RESTIC_PASSWORD="1234"
 TEST_FROM="${CONTAINER}fromdir"
@@ -60,7 +60,7 @@ ${RESTIC} init
 
 # == EXECUTE: a ==
 
-echo "Iteration 1 / 2000"
+echo "Iteration 1 / 5000"
 date | tee "${TEST_FROM}/date.txt"
 ${RESTIC} backup "${TEST_FROM}" > /dev/null
 #/usr/bin/time restic check
@@ -71,7 +71,7 @@ echo "Mirror at time r=1 at path: ${CONTAINER}a"
 
 for i in $(seq 2 500)
 do
-    echo "Iteration $i / 2000"
+    echo "Iteration $i / 5000"
     date | tee "${TEST_FROM}/date.txt"
     ${RESTIC} backup "${TEST_FROM}" > /dev/null
     #/usr/bin/time restic check
@@ -83,7 +83,7 @@ echo "Mirror at time r=500 at path: ${CONTAINER}b"
 
 for i in $(seq 501 1000)
 do
-    echo "Iteration $i / 2000"
+    echo "Iteration $i / 5000"
     date | tee "${TEST_FROM}/date.txt"
     ${RESTIC} backup "${TEST_FROM}" > /dev/null
     #/usr/bin/time restic check
@@ -95,7 +95,7 @@ echo "Mirror at time r=1000 at path: ${CONTAINER}c"
 
 for i in $(seq 1001 1500)
 do
-    echo "Iteration $i / 2000"
+    echo "Iteration $i / 5000"
     date | tee "${TEST_FROM}/date.txt"
     ${RESTIC} backup "${TEST_FROM}" > /dev/null
     #/usr/bin/time restic check
@@ -107,13 +107,88 @@ echo "Mirror at time r=1500 at path: ${CONTAINER}d"
 
 for i in $(seq 1501 2000)
 do
-    echo "Iteration $i / 2000"
+    echo "Iteration $i / 5000"
     date | tee "${TEST_FROM}/date.txt"
     ${RESTIC} backup "${TEST_FROM}" > /dev/null
     #/usr/bin/time restic check
 done 2>&1 | tee -a "${LOGFILE}"
 cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}e"
 echo "Mirror at time r=2000 at path: ${CONTAINER}e"
+
+# == EXECUTE: f ==
+
+for i in $(seq 2001 2500)
+do
+    echo "Iteration $i / 5000"
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}f"
+echo "Mirror at time r=2500 at path: ${CONTAINER}f"
+
+# == EXECUTE: g ==
+
+for i in $(seq 2501 3000)
+do
+    echo "Iteration $i / 5000"
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}g"
+echo "Mirror at time r=3000 at path: ${CONTAINER}g"
+
+# == EXECUTE: h ==
+
+for i in $(seq 3001 3500)
+do
+    echo "Iteration $i / 5000"
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}h"
+echo "Mirror at time r=3500 at path: ${CONTAINER}h"
+
+# == EXECUTE: i ==
+
+for i in $(seq 3501 4000)
+do
+    echo "Iteration $i / 5000"
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}i"
+echo "Mirror at time r=4000 at path: ${CONTAINER}i"
+
+# == EXECUTE: j ==
+
+for i in $(seq 4001 4500)
+do
+    echo "Iteration $i / 5000"
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}j"
+echo "Mirror at time r=4500 at path: ${CONTAINER}j"
+
+# == EXECUTE: k ==
+
+for i in $(seq 4501 5000)
+do
+    echo "Iteration $i / 5000"
+    date | tee "${TEST_FROM}/date.txt"
+    ${RESTIC} backup "${TEST_FROM}" > /dev/null
+    #/usr/bin/time restic check
+done 2>&1 | tee -a "${LOGFILE}"
+cp -a "${RESTIC_REPOSITORY}" "${CONTAINER}k"
+echo "Mirror at time r=5000 at path: ${CONTAINER}k"
+
+# FIXME: I copy-pasted code.  I'm sorry.  I feel dirty.
+
 echo "Repository generation complete."
 
 # == MAKETAR ==
@@ -121,7 +196,7 @@ echo "Repository generation complete."
 REPOFILES="$(mktemp "${CONTAINER}"filelist_XXXXXXX.lst)"
 
 cd "$CONTAINER"
-find a b c d e -empty -o -type f | sort -k1.3 > "${REPOFILES}"
+find a b c d e f g h i h j -empty -o -type f | sort -k1.3 > "${REPOFILES}"
 echo "Saving $(wc -l "${REPOFILES}") files as compressed tar."
 echo "This may take a while ..."
 tar caf repos.tar.xz --files-from "${REPOFILES}"
