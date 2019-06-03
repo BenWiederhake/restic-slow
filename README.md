@@ -5,7 +5,7 @@
 - `repos-contains447MiB.tar.xz`: Copies of a restic-repository undergoing expansion.
   The restic-repositories `a` through `k` gain 500 restic-snapshots in each step.
   Note that these repositories stem from each other, which is why this small 20MB
-  archive manages to store 447MB worth of encrypted data.
+  archive manages to store 447MB worth of encrypted data.  The password is `1234`.
 - `flamegraphs/perf-?-?.data.svg`: I ran `perf record restic check` on each repository five times.
   The 22 GiB output doesn't fit anywhere, but the resulting flamegraphs are small enough.  They are what helped me find the issue.
   * Caveat: d1, e1, f1, h1, and k5 are probably outliers with respect to timing.  My system is noisy, that's why I ran it 5 times each.
